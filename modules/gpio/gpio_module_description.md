@@ -1,7 +1,7 @@
 # STM32F401RE GPIO Peripheral Driver Library
 
 ## Overview
-This header file (`gpio.h`) defines a hardware abstraction layer for the GPIO peripheral on the STM32F401RE microcontroller. It provides a simplified interface for configuring and controlling GPIO pins while abstracting the low-level STM32 LL (Low-Level) driver details.
+This gpio module defines a hardware abstraction layer for the GPIO peripheral on the STM32F401RE microcontroller. It provides a simplified interface for configuring and controlling GPIO pins while abstracting the low-level STM32 LL (Low-Level) driver details.
 
 ## Features
 - Abstracted GPIO initialization for input and output pins
