@@ -219,7 +219,7 @@ uint32_t tmr_open(uint32_t tmrIdx, tmr_cb_func cbFunc, uint32_t time) {
 
 /* Write function */
 /**
- * @brief
+ * @brief: Allows for the time interval to changed by the user during runtime
  *
  * @param[in]: tmrIdx
  * @param[in]: desiredMS
@@ -227,12 +227,12 @@ uint32_t tmr_open(uint32_t tmrIdx, tmr_cb_func cbFunc, uint32_t time) {
  **/
 uint32_t tmr_write(uint32_t tmrIdx, uint32_t time) {
 	if (tmrIdx > TMR_NUM_INSTANCES) {
-		return EXIT_FAILURE;
+		return TMR_INVALID_IDX;
 	}
 
 	tmr_info_t* tmpTmr = &tmr[tmrIdx];
 	if (!tmpTmr->isInstOpen) {
-		return EXIT_FAILURE;
+		return TMR_INST_NOTOPEN;
 	}
 	if(tmpTmr->isTmrRunning){
 		__disable_irq();
@@ -280,7 +280,7 @@ uint32_t tmr_write(uint32_t tmrIdx, uint32_t time) {
 	/* Setting the tmr running */
 	tmpTmr->isTmrRunning = true;
 
-	return EXIT_SUCCESS;
+	return TMR_RETURN_SUCCESS;
 }
 
 /********************** Close function *****************************/
@@ -292,7 +292,7 @@ uint32_t tmr_write(uint32_t tmrIdx, uint32_t time) {
  **/
 uint32_t tmr_close(uint32_t tmrIdx) {
 	if (tmrIdx > TMR_NUM_INSTANCES || tmrIdx < 0U) {
-		return EXIT_FAILURE;
+		return TMR_INVALID_IDX;
 	}
 
 	/* Disabling Interrutps */
@@ -302,7 +302,7 @@ uint32_t tmr_close(uint32_t tmrIdx) {
 	if (tmpTmr == NULL) return EXIT_FAILURE;
 
 	if (!tmpTmr->isInstOpen) {
-		return EXIT_FAILURE;
+		return TMR_INST_NOTOPEN;
 	}
 
 	/* Disabling the counter */
@@ -317,7 +317,7 @@ uint32_t tmr_close(uint32_t tmrIdx) {
 
 	__enable_irq();
 
-	return EXIT_SUCCESS;
+	return TMR_RETURN_SUCCESS;
 }
 /* Read Function */
 /**
@@ -334,7 +334,7 @@ uint32_t tmr_read(uint32_t tmrIdx) {
 	tmr_info_t* tmpTmr = &tmr[tmrIdx];
 
 	if (tmpTmr == NULL || !tmpTmr->isInstOpen) {
-		return EXIT_FAILURE;
+		return (TMR_CONFIG_NULL | TMR_INST_NOTOPEN);
 	}
 
 	printf("\n\rTmr\tOpen\tTime\n\r");
@@ -342,7 +342,7 @@ uint32_t tmr_read(uint32_t tmrIdx) {
 	printf("%s\t%ld\t%ld\n\r", tmrInstName[tmrIdx], (uint32_t)tmpTmr->isInstOpen,
 			tmpTmr->tmrTime);
 
-	return EXIT_SUCCESS;
+	return TMR_RETURN_SUCCESS;
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Private (static) function definitions
