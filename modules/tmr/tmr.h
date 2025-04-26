@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿/**
+/**
  * @file
  * @author Owais Talpur (owaistalpur@hotmail.com)
  * @brief
@@ -51,6 +51,7 @@ typedef void (*tmr_cb_func)(void);
 
 typedef TIM_TypeDef tmrBase;
 
+// Instance ID
 typedef enum {
 
   TMR_INSTANCE2,
@@ -72,6 +73,17 @@ typedef enum {
   TMR_BASE_NUM
 } tmr_base_unit_t;
 
+// Tmr module priorituy
+typedef enum {
+	
+	TMR_PRIORITY_HIGH,
+	TMR_PRIORITY_MED,
+	TMR_PRIORITY_LOW,
+
+	TMR_NUM_PRIORITIES
+}tmr_priority_t;
+
+// Tmr return errors
 typedef enum {
 	
 	TMR_RETURN_SUCCESS,
@@ -81,7 +93,9 @@ typedef enum {
 	TMR_INVALID_IDX,
 	TMR_INVALID_BASEUNIT,
 	TMR_INVALID_CBFUNC,
-	TMR_INST_ALREADY_OPEN
+	TMR_INVALID_PRIORITY,
+	TMR_INST_ALREADY_OPEN,
+	TMR_INST_NOTOPEN
 
 }tmr_func_results_t;
 
@@ -89,18 +103,18 @@ typedef enum {
 typedef struct {
   uint32_t tmrInstancesId;
   uint32_t tmrBaseUnit;
+  uint32_t tmrPriority;
 
 } tmr_config_t;
-
 /* Instance handler */
 typedef struct {
-  tmr_config_t* usrConfig;
-  tmrBase* tmrReg;
+	tmr_config_t* usrConfig;
+	tmrBase* tmrReg;
 
-  tmr_cb_func cbFunc;
-  uint32_t tmrTime;
-  bool isTmrRunning;
-  bool isInstOpen;
+	tmr_cb_func cbFunc;
+	uint32_t tmrTime;
+	bool isTmrRunning;
+	bool isInstOpen;
 
 } tmr_info_t;
 
