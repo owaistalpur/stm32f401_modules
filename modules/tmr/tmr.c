@@ -48,11 +48,12 @@ static char tmrInstName[4U][7U] = {"Timer2", "Timer3", "Timer4"};
 uint32_t tmr_def_init(tmr_config_t* tmrConfig) {
 	
 	/* Checking to see if the tmrConfig is already configured */
-	if(tmrConfig != NULL) return TMR_CONFG_ALREADY_CONFIGED;
+	if(tmrConfig == NULL) return TMR_CONFIG_NULL;
 	
 	/* Setting the base timer unit and instances ID */
 	tmrConfig->tmrInstancesId = TMR_INSTANCE3;
 	tmrConfig->tmrBaseUnit = TMR_BASE_1MS;
+	tmrConfig->tmrPriority = TMR_PRIORITY_MED;
 
 	uint8_t tmrIdx = tmrConfig->tmrInstancesId;
 
@@ -171,10 +172,12 @@ uint32_t tmr_open(uint32_t tmrIdx, tmr_cb_func cbFunc, uint32_t time) {
 		default:
 			return TMR_INVALID_BASEUNIT; 
 	}
+	
+	
 
 	// Setting up the IRQ for the tmr module
 	IRQn_Type tmrIrq = 0U;
-
+	
 	/* Selecting the correct tmr IRQ based on tmrIdx */
 	switch (tmrIdx) {
 		case TMR_INSTANCE2:
@@ -190,15 +193,29 @@ uint32_t tmr_open(uint32_t tmrIdx, tmr_cb_func cbFunc, uint32_t time) {
 			return TMR_INVALID_IDX;
 
 	}
+	// Setting up the priority
+	tmpVar = tmpTmr->usrConfig->tmrPriority;
+	switch(tmpVar){
+		
+		case TMR_PRIORITY_LOW:
+			NVIC_SetPriority(tmrIrq, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0U, TMR_PRIORITY_LOW));
+			break;
+		
+		case TMR_PRIORITY_MED:
+			NVIC_SetPriority(tmrIrq, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0U, TMR_PRIORITY_MED));
+			break;
+
+		case TMR_PRIORITY_HIGH:	
+			NVIC_SetPriority(tmrIrq, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0U, TMR_PRIORITY_HIGH));
+			break;
+		default:
+			return TMR_INVALID_PRIORITY;
+	}
 	/* Setting the Update interrupt for the tmr */
 	LL_TIM_EnableIT_UPDATE(tmpTmr->tmrReg);
-
-	/* Enabling the interrupt and setting priority */
-	NVIC_SetPriority(tmrIrq,
-			NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0U,
-				0U));  // Set priority (0 = highest)
 	NVIC_EnableIRQ(tmrIrq);                     // Enable TIM3 interrupt in NVIC
-
+	
+	
 	// Setting the callback function
 	if (cbFunc == NULL) {
 		return TMR_INVALID_CBFUNC;
@@ -219,21 +236,29 @@ uint32_t tmr_open(uint32_t tmrIdx, tmr_cb_func cbFunc, uint32_t time) {
 
 /* Write function */
 /**
- * @brief: Allows for the time interval to changed by the user during runtime
+ * @brief:	   This function changes the the time interval for the currently
+ *			   opened tmr instance
  *
  * @param[in]: tmrIdx
- * @param[in]: desiredMS
+ * @param[in]: time 
  * @return[out]: uint32_t
  **/
 uint32_t tmr_write(uint32_t tmrIdx, uint32_t time) {
+
+	// Checking to see if the index is valid
 	if (tmrIdx > TMR_NUM_INSTANCES) {
-		return TMR_INVALID_IDX;
+		return TMR_INVALID_IDX; 
 	}
 
+	// Creating a temp tmr handler
 	tmr_info_t* tmpTmr = &tmr[tmrIdx];
+
+	// Checking to see if the instance is open, if its not then return
 	if (!tmpTmr->isInstOpen) {
 		return TMR_INST_NOTOPEN;
 	}
+
+	// Checking to see if the tmr is running, and then turning it off
 	if(tmpTmr->isTmrRunning){
 		__disable_irq();
 		LL_TIM_DisableIT_UPDATE(tmpTmr->tmrReg);
@@ -243,7 +268,8 @@ uint32_t tmr_write(uint32_t tmrIdx, uint32_t time) {
 	
 	uint32_t tmpVar = tmpTmr->usrConfig->tmrBaseUnit;
 	uint32_t tmpTime;
-
+	
+	// Setting the desired time into the ARR
 	switch (tmpVar) {
 		case TMR_BASE_1US:
 			/* Calculating the autoreload register value for the desired time */
@@ -292,14 +318,14 @@ uint32_t tmr_write(uint32_t tmrIdx, uint32_t time) {
  **/
 uint32_t tmr_close(uint32_t tmrIdx) {
 	if (tmrIdx > TMR_NUM_INSTANCES || tmrIdx < 0U) {
-		return TMR_INVALID_IDX;
+		return TMR_INVALID_IDX; 
 	}
 
 	/* Disabling Interrutps */
 	__disable_irq();
 
 	tmr_info_t* tmpTmr = &tmr[tmrIdx];
-	if (tmpTmr == NULL) return EXIT_FAILURE;
+	if (tmpTmr == NULL) return TMR_CONFIG_NULL;
 
 	if (!tmpTmr->isInstOpen) {
 		return TMR_INST_NOTOPEN;
@@ -328,13 +354,13 @@ uint32_t tmr_close(uint32_t tmrIdx) {
  **/
 uint32_t tmr_read(uint32_t tmrIdx) {
 	if (tmrIdx > TMR_NUM_INSTANCES) {
-		return EXIT_FAILURE;
+		return TMR_INVALID_IDX;
 	}
 
 	tmr_info_t* tmpTmr = &tmr[tmrIdx];
 
 	if (tmpTmr == NULL || !tmpTmr->isInstOpen) {
-		return (TMR_CONFIG_NULL | TMR_INST_NOTOPEN);
+		return TMR_INST_NOTOPEN;
 	}
 
 	printf("\n\rTmr\tOpen\tTime\n\r");
